@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="flex items-center justify-center min-h-[calc(100vh-100px)] bg-gray-50 px-4">
+    <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg border border-gray-100">
+        
+        <div class="text-center">
+            <h2 class="text-3xl font-extrabold text-gray-900">Create Account</h2>
+            <p class="mt-2 text-sm text-gray-500">Join the Smart Assessment System</p>
+        </div>
+
+        <form id="regForm" method="POST" class="space-y-4">
+            {% csrf_token %}
+            
+            <div class="django-form-container">
+                {{ form.as_p }}
+            </div>
+
+            <p id="error-msg" class="text-sm text-red-600 font-medium"></p>
+
+            <button type="submit" 
+                class="w-full py-3 px-4 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg font-semibold shadow-md transition duration-200 transform hover:-translate-y-0.5">
+                Register
+            </button>
+        </form>
+    </div>
+</div>
+
+<style>
+    .django-form-container p {
+        margin-bottom: 1rem;
+    }
+    .django-form-container label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 0.25rem;
+    }
+    .django-form-container input {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: border-color 0.2s, ring 0.2s;
+    }
+    .django-form-container input:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+    .django-form-container .helptext {
+        display: block;
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+    }
+</style>
+
+<script>
+    document.getElementById('regForm').onsubmit = function(e) {
+        let pass = document.getElementsByName('password')[0].value;
+        let confirm = document.getElementsByName('confirm_password')[0].value;
+
+        if (pass !== confirm) {
+            e.preventDefault();
+            document.getElementById('error-msg').innerText = "⚠️ Passwords must match!";
+        }
+    };
+</script>
+{% endblock %}

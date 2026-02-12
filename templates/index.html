@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="min-h-[70vh] flex flex-col items-center justify-center text-center px-6 py-20">
+    <div class="max-w-4xl">
+        <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-6">
+            Welcome to <span class="text-indigo-600">Smart Assess</span>
+        </h1>
+        <p class="text-xl text-slate-600 mb-10 leading-relaxed max-w-2xl mx-auto">
+            The next-generation smart assessment system is officially running! Streamline your testing and analytics today.
+        </p>
+        
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="/register" class="btn-primary">
+                Get Started
+            </a>
+            <a href="/login" class="btn-secondary">
+                Login
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="bg-white py-24">
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="grid md:grid-cols-3 gap-10">
+            <div class="feature-card group">
+                <div class="icon-circle bg-indigo-50 text-indigo-600">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3">Users</h3>
+                <p class="text-slate-500 leading-relaxed text-center">Secure account management and detailed user profiles for personalized experiences.</p>
+            </div>
+
+            <div class="feature-card group">
+                <div class="icon-circle bg-blue-50 text-blue-600">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3">Quizzes</h3>
+                <p class="text-slate-500 leading-relaxed text-center">Engaging assessments and real-time results powered by an intelligent engine.</p>
+            </div>
+
+            <div class="feature-card group">
+                <div class="icon-circle bg-emerald-50 text-emerald-600">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-3">Dashboard</h3>
+                <p class="text-slate-500 leading-relaxed text-center">Track your progress with smart analytics and visual data performance charts.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Button Transformations */
+    .btn-primary {
+        background-color: #4f46e5;
+        color: white;
+        padding: 1rem 2.5rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+    }
+    .btn-primary:hover {
+        background-color: #4338ca;
+        transform: scale(1.08) translateY(-3px); /* Scale transformation */
+        box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.4);
+    }
+
+    .btn-secondary {
+        border: 2px solid #e2e8f0;
+        background-color: white;
+        padding: 1rem 2.5rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        transition: all 0.3s ease;
+    }
+    .btn-secondary:hover {
+        border-color: #4f46e5;
+        color: #4f46e5;
+        transform: scale(1.08) translateY(-3px); /* Scale transformation */
+    }
+
+    /* Feature Card Transformations */
+    .feature-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 3rem 2rem;
+        background-color: white;
+        border-radius: 2rem;
+        border: 1px solid #f1f5f9;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .feature-card:hover {
+        transform: translateY(-15px) scale(1.02); /* Major transformation */
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+        border-color: #e2e8f0;
+    }
+
+    .icon-circle {
+        width: 4rem;
+        height: 4rem;
+        border-radius: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    .feature-card:hover .icon-circle {
+        transform: rotate(12deg) scale(1.2); /* Icon transformation */
+    }
+</style>
+{% endblock %}

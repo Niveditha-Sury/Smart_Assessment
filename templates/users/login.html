@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="min-h-[85vh] flex flex-col justify-center items-center bg-gray-50 px-4">
+    
+    <div class="w-full max-w-md bg-white p-10 rounded-2xl shadow-2xl border border-gray-100">
+        <h2 class="text-3xl font-extrabold text-gray-900 text-center mb-10 tracking-tight">Login</h2>
+        
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="django-login-fields">
+                {{ form.as_p }}
+            </div>
+
+            <button type="submit" 
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-all duration-200 focus:ring-4 focus:ring-blue-200">
+                Sign In
+            </button>
+        </form>
+
+        <div class="mt-8 pt-6 border-t border-gray-100 text-center">
+            <p class="text-sm text-gray-500">
+                Don't have an account? 
+                <a href="{% url 'register' %}" class="font-bold text-blue-600 hover:text-blue-500 underline-offset-4 hover:underline">
+                    Register here
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Eliminates the "congested" feel by adding space between the <p> tags Django creates */
+    .django-login-fields p {
+        margin-bottom: 1.75rem; /* Increased spacing between fields */
+    }
+    
+    .django-login-fields label {
+        display: block;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #4b5563;
+        margin-bottom: 0.6rem; /* Spacing between label and input box */
+    }
+
+    .django-login-fields input {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 0.75rem;
+        background-color: #ffffff;
+        transition: all 0.3s ease;
+    }
+
+    .django-login-fields input:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        transform: scale(1.01); /* Subtle grow effect on click */
+    }
+</style>
+{% endblock %}
