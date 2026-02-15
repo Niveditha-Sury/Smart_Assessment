@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div id="quiz-container">
+        {% for question in questions %}
+        <div class="card question-card {% if not forloop.first %}d-none{% endif %}" id="question-{{ forloop.counter }}">
+            <div class="card-body">
+                <h5 class="card-title text-muted">Question {{ forloop.counter }} of {{ questions|length }}</h5>
+                <hr>
+                <p class="lead fw-bold"> {{ question.text }} </p>
+
+                <div class="options-grid d-grid gap-2 mt-4">
+                    {% for choice in question.choices.all %}
+                    <button class="btn btn-outline-primary option-btn p-3 text-start" 
+                            data-is-correct="{{ choice.is_correct }}"
+                            onclick="checkAnswer(this, '{{ choice.is_correct }}')">
+                        {{ choice.text }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div id="result-card" class="card d-none text-center p-5 shadow">
+            <h2 class="mb-4">Quiz Finished!</h2>
+            <div class="mb-4">
+                <span class="text-muted h4">Your Score:</span><br>
+                <span class="display-1 fw-bold text-primary"><span id="score">0</span></span>
+                <span class="display-4 text-muted">/ {{ questions|length }}</span>
+            </div>
+            <a href="{% url 'home' %}" class="btn btn-lg btn-primary px-5">Finish & Back to Home</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Prevent the buttons from jumping when classes are added */
+    .option-btn {
+        transition: all 0.2s ease;
+        border-width: 2px;
+    }
+    /* Specific colors for correctness */
+    .btn-success { background-color: #28a745 !important; color: white !important; border-color: #1e7e34 !important; }
+    .btn-danger { background-color: #dc3545 !important; color: white !important; border-color: #bd2130 !important; }
+    /* Ensure disabled buttons don't look faded so the color is visible */
+    .option-btn:disabled { opacity: 1 !important; cursor: not-allowed; }
+</style>
+
+<script>
+    // These variables are initialized when the page loads
+    let currentQuestionIndex = 1;
+    let totalQuestions = parseInt("{{ questions|length }}");
+    let scoreCount = 0;
+
+    function checkAnswer(button, isCorrect) {
+        // Find the specific card this button belongs to
+        const card = button.closest('.question-card');
+        const buttons = card.querySelectorAll('.option-btn');
+
+        // 1. Disable all buttons in this card immediately
+        buttons.forEach(btn => btn.disabled = true);
+
+        // 2. Logic check: Django booleans usually come through as 'True' or 'False' strings
+        if (isCorrect === 'True') {
+            button.classList.remove('btn-outline-primary');
+            button.classList.add('btn-success');
+            scoreCount++;
+        } else {
+            button.classList.remove('btn-outline-primary');
+            button.classList.add('btn-danger');
+            
+            // Show the user the right answer
+            buttons.forEach(btn => {
+                if (btn.getAttribute('data-is-correct') === 'True') {
+                    btn.classList.remove('btn-outline-primary');
+                    btn.classList.add('btn-success');
+                }
+            });
+        }
+
+        // 3. Wait 1.5 seconds, then move to the next question
+        setTimeout(showNextQuestion, 1500);
+    }
+
+    function showNextQuestion() {
+        // Hide the current active question
+        const currentCard = document.getElementById(`question-${currentQuestionIndex}`);
+        if (currentCard) {
+            currentCard.classList.add('d-none');
+        }
+        
+        currentQuestionIndex++;
+
+        // If there's another question, show it
+        if (currentQuestionIndex <= totalQuestions) {
+            const nextCard = document.getElementById(`question-${currentQuestionIndex}`);
+            if (nextCard) {
+                nextCard.classList.remove('d-none');
+            }
+        } else {
+            // Otherwise, show the final score card
+            const resultCard = document.getElementById('result-card');
+            resultCard.classList.remove('d-none');
+            document.getElementById('score').innerText = scoreCount;
+        }
+    }
+</script>
+{% endblock %}

@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Assess</title>
+    <title>Smart Assessment</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Global spacing fix for Django's form.as_p output */
+        /* Global spacing */
         .django-form-content p {
             margin-bottom: 1.5rem;
         }
@@ -30,6 +32,7 @@
         }
     </style>
 </head>
+
 <body class="bg-slate-50">
     <nav class="bg-white border-b border-slate-200">
         <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
@@ -40,25 +43,38 @@
 
                 {% if user.is_authenticated %}
                     <div class="flex items-center space-x-4">
+                        <span class="text-slate-700 text-sm font-semibold">Hi, {{ user.username }}</span>
+                        
                         <div class="h-10 w-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center border border-indigo-200">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                         </div>
+
                         <form action="{% url 'logout' %}" method="post" class="inline">
                             {% csrf_token %}
-                            <button type="submit" class="text-slate-500 hover:text-red-600 text-sm font-semibold">Logout</button>
+                            <button type="submit" class="text-slate-500 hover:text-red-600 text-sm font-semibold transition-colors">Logout</button>
                         </form>
                     </div>
                 {% else %}
                     <a href="{% url 'login' %}" class="text-slate-600 hover:text-indigo-600 transition-colors">Login</a>
-                    <a href="{% url 'register' %}" class="inline-flex items-center justify-center bg-indigo-600 text-white px-6 py-2.5 rounded-full hover:bg-indigo-700 transition-all shadow-md transform hover:scale-105">
+                    <a href="{% url 'register' %}" class="inline-flex items-center justify-center bg-indigo-600 text-white px-6 py-2.5 rounded-full hover:bg-indigo-700 transition-all shadow-md">
                         Register
                     </a>
                 {% endif %}
             </div>
         </div>
     </nav>
+
+    {% if messages %}
+    <div class="max-w-7xl mx-auto px-6 mt-6">
+        {% for message in messages %}
+        <div class="p-4 rounded-xl border {% if message.tags == 'success' %}bg-green-50 border-green-200 text-green-700{% elif message.tags == 'error' %}bg-red-50 border-red-200 text-red-700{% else %}bg-blue-50 border-blue-200 text-blue-700{% endif %} shadow-sm">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <main class="py-10">
         {% block content %}{% endblock %}

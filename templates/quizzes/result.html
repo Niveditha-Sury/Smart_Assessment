@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-5 text-center">
+    <div class="card shadow-lg border-0 p-5 rounded-5 mx-auto" style="max-width: 700px;">
+        <h1 class="display-4 fw-bold mb-3">Quiz Finished!</h1>
+        
+        <div class="my-4">
+            <div class="display-1 fw-bold text-primary">{{ percentage|floatformat:0 }}%</div>
+            <p class="lead text-muted">You got {{ score }} out of {{ total }} correct.</p>
+        </div>
+
+        <div class="progress mb-5" style="height: 20px; border-radius: 50px; background-color: #e9ecef;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                 role="progressbar" 
+                 aria-valuenow="{{ percentage|default:0 }}" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100"
+                 style="width: 100%;"> 
+                 </div>
+        </div>
+
+        <h4 class="text-start fw-bold mb-3">Review Answers</h4>
+        <div class="list-group list-group-flush text-start">
+            {% for res in results %}
+            <div class="list-group-item border-0 px-0 mb-3 border-bottom">
+                <p class="fw-bold mb-1">{{ forloop.counter }}. {{ res.question }}</p>
+                <div class="small">
+                    Your answer: <span class="{% if res.is_correct %}text-success{% else %}text-danger{% endif %} fw-bold">{{ res.user_choice }}</span> <br>
+                    {% if not res.is_correct %}
+                    Correct answer: <span class="text-success fw-bold">{{ res.correct_choice }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="d-flex gap-3 justify-content-center mt-4">
+            <a href="{% url 'quiz_categories' %}" class="btn btn-primary rounded-pill px-4">Try Another</a>
+            <a href="/" class="btn btn-outline-secondary rounded-pill px-4">Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
