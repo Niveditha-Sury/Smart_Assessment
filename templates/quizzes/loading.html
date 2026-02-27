@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container text-center py-5">
+    <div class="spinner-border text-primary mb-4" role="status" style="width: 3rem; height: 3rem;"></div>
+    <h2 class="fw-bold">Generating Your Smart Quiz...</h2>
+    <p class="text-muted" id="status-text">Connecting to AI Engine...</p>
+    
+    <div class="progress mt-4 mx-auto" style="max-width: 500px; height: 12px; border-radius: 10px;">
+        <div id="ai-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const bar = document.getElementById('ai-progress-bar');
+        const status = document.getElementById('status-text');
+        const stages = ["Analyzing topic...", "Drafting questions...", "Verifying answers...", "Finalizing..."];
+        let width = 0;
+
+        // 1. Start artificial progress animation
+        const interval = setInterval(() => {
+            if (width < 90) {
+                width += 1;
+                bar.style.width = width + "%";
+                if (width % 25 === 0) status.innerText = stages[Math.floor(width/25)];
+            }
+        }, 150);
+
+        // 2. Call the actual backend generation
+        fetch("{% url 'process_ai_generation' subcategory.id %}")
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    width = 100;
+                    bar.style.width = "100%";
+                    status.innerText = "Quiz Ready!";
+                    // Redirect to the play page after a short "success" pause
+                    setTimeout(() => {
+                        window.location.href = "{% url 'quiz_play_ai' %}";
+                    }, 800);
+                } else {
+                    alert("AI Generation Error: " + data.message);
+                    window.location.href = "{% url 'dashboard' %}";
+                }
+            });
+    });
+</script>
+{% endblock %}

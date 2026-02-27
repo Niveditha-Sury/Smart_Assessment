@@ -5,32 +5,62 @@
     .subcategory-card {
         transition: all 0.3s ease;
         border-radius: 20px;
-        border-left: 5px solid #6c757d; /* Neutral until hover */
+        border-left: 5px solid #6c757d;
     }
     .subcategory-card:hover {
         border-left: 5px solid #0d6efd;
         transform: translateX(10px);
         background-color: rgba(13, 110, 253, 0.02);
     }
+    /* AI Mode Styling */
+    .ai-active-card {
+        border-left: 5px solid #8a2be2 !important; /* Purple for AI */
+        background-color: rgba(138, 43, 226, 0.05) !important;
+    }
+    .ai-active-card:hover {
+        border-left: 5px solid #bf40bf !important;
+    }
+    .form-switch .form-check-input:checked {
+        background-color: #8a2be2;
+        border-color: #8a2be2;
+    }
 </style>
 
 <div class="container py-5">
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'quiz_categories' %}" class="text-decoration-none">Categories</a></li>
-            <li class="breadcrumb-item active">{{ category.name }}</li>
-        </ol>
-    </nav>
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{% url 'quiz_categories' %}" class="text-decoration-none">Categories</a></li>
+                <li class="breadcrumb-item active">{{ category.name }}</li>
+            </ol>
+        </nav>
+
+        <div class="form-check form-switch bg-white p-2 px-4 rounded-pill shadow-sm border d-flex align-items-center">
+            <input class="form-check-input me-2" type="checkbox" role="switch" id="aiModeToggle" style="width: 2.5em; height: 1.25em; cursor: pointer;">
+            <label class="form-check-label fw-bold text-dark mb-0" for="aiModeToggle" style="cursor: pointer;">
+                ✨ AI Quiz Mode
+            </label>
+        </div>
+    </div>
 
     <h1 class="display-greeting mb-4">Subjects in <span class="text-gradient">{{ category.name }}</span></h1>
 
     <div class="row g-3">
         {% for sub in subcategories %}
         <div class="col-12">
-            <a href="{% url 'quiz_settings' sub.id %}" class="text-decoration-none text-dark">
-                <div class="card p-4 shadow-sm subcategory-card d-flex flex-row align-items-center justify-content-between">
-                    <h5 class="fw-bold mb-0">{{ sub.name }}</h5>
-                    <i class="bi bi-chevron-right text-primary"></i>
+            <a href="{% url 'quiz_settings' sub.id %}" 
+               id="link-{{ sub.id }}" 
+               class="subcategory-link text-decoration-none text-dark" 
+               data-sub-id="{{ sub.id }}"
+               data-standard-url="{% url 'quiz_settings' sub.id %}"
+               data-ai-url="{% url 'quiz_loading' sub.id %}">
+                
+                <div id="card-{{ sub.id }}" class="card p-4 shadow-sm subcategory-card d-flex flex-row align-items-center justify-content-between">
+                    <div>
+                        <h5 class="fw-bold mb-0">{{ sub.name }}</h5>
+                        <small class="text-muted mode-text">Standard Mode</small>
+                    </div>
+                    <i class="bi bi-chevron-right text-primary icon-arrow"></i>
                 </div>
             </a>
         </div>
@@ -41,4 +71,40 @@
         {% endfor %}
     </div>
 </div>
+
+
+
+<script>
+    document.getElementById('aiModeToggle').addEventListener('change', function() {
+        const isAi = this.checked;
+        const links = document.querySelectorAll('.subcategory-link');
+
+        links.forEach(link => {
+            const subId = link.getAttribute('data-sub-id');
+            const card = document.getElementById(`card-${subId}`);
+            const modeText = card.querySelector('.mode-text');
+            const icon = card.querySelector('.icon-arrow');
+
+            if (isAi) {
+                // Switch to AI Link and Purple Styling
+                link.href = link.getAttribute('data-ai-url');
+                card.classList.add('ai-active-card');
+                modeText.innerText = "✨ AI Powered Questions";
+                modeText.classList.replace('text-muted', 'text-purple');
+                icon.style.color = "#8a2be2";
+            } else {
+                // Revert to Standard Link and Grey Styling
+                link.href = link.getAttribute('data-standard-url');
+                card.classList.remove('ai-active-card');
+                modeText.innerText = "Standard Mode";
+                modeText.classList.replace('text-purple', 'text-muted');
+                icon.style.color = "#0d6efd";
+            }
+        });
+    });
+</script>
+
+<style>
+    .text-purple { color: #8a2be2; }
+</style>
 {% endblock %}

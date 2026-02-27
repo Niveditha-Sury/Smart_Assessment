@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from users.models import Profile
-from quizzes.models import Category, Subcategory 
+from quizzes.models import Category, QuizAttempt, Subcategory 
 # Create your views here.
 
 def home(request):
@@ -18,14 +18,20 @@ def dashboard_home(request):
 def dashboard(request):
     profile = request.user.profile 
     
-    total_subs = Subcategory.objects.count()
-    completed_count = profile.completed_subcategories.count()
-    
-    mastery_level = (completed_count / total_subs * 100) if total_subs > 0 else 0
+    # Logic for Mastery Progress
     all_subcategories = Subcategory.objects.all()
+    total_subs = all_subcategories.count()
+    completed_count = profile.completed_subcategories.count()
+    mastery_level = (completed_count / total_subs * 100) if total_subs > 0 else 0
     
-    return render(request, 'quizzes/dashboard.html', {
+    # Logic for Quiz History
+    user_attempts = QuizAttempt.objects.filter(user=request.user).order_by('-created_at')
+    total_quizzes = user_attempts.count()
+    
+    return render(request, 'dashboard/index.html', {
         'profile': profile,
         'mastery_level': mastery_level,
-        'all_subcategories': all_subcategories
+        'all_subcategories': all_subcategories,
+        'attempts': user_attempts,
+        'total_quizzes': total_quizzes,
     })

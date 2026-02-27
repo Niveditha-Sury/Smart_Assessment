@@ -1,110 +1,239 @@
 {% extends 'base.html' %}
-
 {% block content %}
+
+<style>
+    /* Instant Feedback Styles */
+    .btn-outline-primary { transition: all 0.2s; border-width: 2px; }
+    .correct-flash { background-color: #198754 !important; color: white !important; border-color: #198754 !important; }
+    .wrong-flash { background-color: #dc3545 !important; color: white !important; border-color: #dc3545 !important; }
+    .option-btn { pointer-events: auto; }
+    /* Removed .disabled-options to allow re-navigation, but kept logic in JS */
+
+    /* Task 9: Timer Warning Animations */
+    .timer-warning { background-color: #ffc107 !important; color: #000 !important; }
+    .timer-critical { 
+        background-color: #dc3545 !important; 
+        color: #fff !important; 
+        animation: pulse-red 1s infinite;
+    }
+    @keyframes pulse-red {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+</style>
+
 <div class="container mt-5">
-    <div id="quiz-container">
-        {% for question in questions %}
-        <div class="card question-card {% if not forloop.first %}d-none{% endif %}" id="question-{{ forloop.counter }}">
-            <div class="card-body">
-                <h5 class="card-title text-muted">Question {{ forloop.counter }} of {{ questions|length }}</h5>
-                <hr>
-                <p class="lead fw-bold"> {{ question.text }} </p>
-
-                <div class="options-grid d-grid gap-2 mt-4">
-                    {% for choice in question.choices.all %}
-                    <button class="btn btn-outline-primary option-btn p-3 text-start" 
-                            data-is-correct="{{ choice.is_correct }}"
-                            onclick="checkAnswer(this, '{{ choice.is_correct }}')">
-                        {{ choice.text }}
-                    </button>
-                    {% endfor %}
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="progress w-75" style="height: 15px; border-radius: 10px;">
+                    <div id="quiz-progress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
                 </div>
+                {% if timer_enabled %}
+                <div id="timer-box" class="badge bg-dark p-2 fs-6 shadow">
+                    <i class="bi bi-clock me-1"></i> <span id="timer-display">00:00</span>
+                </div>
+                {% endif %}
             </div>
-        </div>
-        {% endfor %}
 
-        <div id="result-card" class="card d-none text-center p-5 shadow">
-            <h2 class="mb-4">Quiz Finished!</h2>
-            <div class="mb-4">
-                <span class="text-muted h4">Your Score:</span><br>
-                <span class="display-1 fw-bold text-primary"><span id="score">0</span></span>
-                <span class="display-4 text-muted">/ {{ questions|length }}</span>
-            </div>
-            <a href="{% url 'home' %}" class="btn btn-lg btn-primary px-5">Finish & Back to Home</a>
+            <form id="quiz-form" method="POST" action="{% url 'submit_quiz' %}">
+                {% csrf_token %}
+                <input type="hidden" name="time_spent" id="time_spent_input" value="00:00">
+                <input type="hidden" name="is_ai" value="{{ is_ai }}">
+
+                {% for question in questions %}
+                <div class="card question-card shadow {% if not forloop.first %}d-none{% endif %}" id="q-card-{{ forloop.counter }}">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="text-muted mb-0">Question {{ forloop.counter }} of {{ questions|length }}</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="h4 mb-4 fw-bold">{{ question.text }}</p>
+                        
+                        <div class="d-grid gap-3 options-group">
+                            {% if is_ai %}
+                                {% for choice in question.choices %}
+                                <div class="option-container">
+                                    <input type="radio" class="btn-check" name="q{{ forloop.parentloop.counter }}" id="ai-{{ forloop.parentloop.counter }}-{{ forloop.counter }}" value="{{ choice }}">
+                                    <label class="btn btn-outline-primary text-start p-3 w-100 option-btn" for="ai-{{ forloop.parentloop.counter }}-{{ forloop.counter }}" 
+                                           onclick="processChoice(this, '{{ choice|escapejs }}', '{{ question.correct_answer|escapejs }}')">
+                                        {{ choice }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                {% for choice in question.choices.all %}
+                                <div class="option-container">
+                                    <input type="radio" class="btn-check" name="q{{ question.id }}" id="std-{{ choice.id }}" value="{{ choice.id }}">
+                                    <label class="btn btn-outline-primary text-start p-3 w-100 option-btn" for="std-{{ choice.id }}" 
+                                           onclick="processChoice(this, '{{ choice.id }}', '{% if choice.is_correct %}true{% else %}false{% endif %}', true)">
+                                        {{ choice.text }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" id="prev-btn" class="btn btn-outline-secondary rounded-pill px-4 invisible" onclick="changeQuestion(-1)">
+                        <i class="bi bi-arrow-left me-1"></i> Previous
+                    </button>
+                    
+                    <div>
+                        <button type="button" id="next-btn" class="btn btn-primary rounded-pill px-4" onclick="changeQuestion(1)">
+                            Next <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                        <button type="submit" id="submit-btn" class="btn btn-success rounded-pill px-4 d-none">
+                            Submit Quiz <i class="bi bi-check-circle ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
-<style>
-    /* Prevent the buttons from jumping when classes are added */
-    .option-btn {
-        transition: all 0.2s ease;
-        border-width: 2px;
-    }
-    /* Specific colors for correctness */
-    .btn-success { background-color: #28a745 !important; color: white !important; border-color: #1e7e34 !important; }
-    .btn-danger { background-color: #dc3545 !important; color: white !important; border-color: #bd2130 !important; }
-    /* Ensure disabled buttons don't look faded so the color is visible */
-    .option-btn:disabled { opacity: 1 !important; cursor: not-allowed; }
-</style>
-
 <script>
-    // These variables are initialized when the page loads
-    let currentQuestionIndex = 1;
-    let totalQuestions = parseInt("{{ questions|length }}");
-    let scoreCount = 0;
+    let currentIdx = 1;
+    const totalQuestions = parseInt("{{ questions|length|default:0 }}");
+    let timeLeft = parseInt("{{ time_limit|default:0 }}");
+    const timerEnabled = "{{ timer_enabled }}" === "True";
+    let secondsElapsed = 0;
+    let quizSubmitted = false;
 
-    function checkAnswer(button, isCorrect) {
-        // Find the specific card this button belongs to
-        const card = button.closest('.question-card');
-        const buttons = card.querySelectorAll('.option-btn');
+    // Timer Logic
+    if (timerEnabled && timeLeft > 0) {
+        const timerBox = document.getElementById('timer-box');
+        const timerDisplay = document.getElementById('timer-display');
 
-        // 1. Disable all buttons in this card immediately
-        buttons.forEach(btn => btn.disabled = true);
-
-        // 2. Logic check: Django booleans usually come through as 'True' or 'False' strings
-        if (isCorrect === 'True') {
-            button.classList.remove('btn-outline-primary');
-            button.classList.add('btn-success');
-            scoreCount++;
-        } else {
-            button.classList.remove('btn-outline-primary');
-            button.classList.add('btn-danger');
-            
-            // Show the user the right answer
-            buttons.forEach(btn => {
-                if (btn.getAttribute('data-is-correct') === 'True') {
-                    btn.classList.remove('btn-outline-primary');
-                    btn.classList.add('btn-success');
-                }
-            });
-        }
-
-        // 3. Wait 1.5 seconds, then move to the next question
-        setTimeout(showNextQuestion, 1500);
-    }
-
-    function showNextQuestion() {
-        // Hide the current active question
-        const currentCard = document.getElementById(`question-${currentQuestionIndex}`);
-        if (currentCard) {
-            currentCard.classList.add('d-none');
-        }
-        
-        currentQuestionIndex++;
-
-        // If there's another question, show it
-        if (currentQuestionIndex <= totalQuestions) {
-            const nextCard = document.getElementById(`question-${currentQuestionIndex}`);
-            if (nextCard) {
-                nextCard.classList.remove('d-none');
+        const timerInterval = setInterval(() => {
+            if (quizSubmitted) {
+                clearInterval(timerInterval);
+                return;
             }
-        } else {
-            // Otherwise, show the final score card
-            const resultCard = document.getElementById('result-card');
-            resultCard.classList.remove('d-none');
-            document.getElementById('score').innerText = scoreCount;
-        }
+
+            timeLeft--; 
+            secondsElapsed++;
+            
+            const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const secs = (timeLeft % 60).toString().padStart(2, '0');
+            timerDisplay.innerText = `${mins}:${secs}`;
+
+            if (timeLeft <= 60 && timeLeft > 20) {
+                timerBox.classList.replace('bg-dark', 'timer-warning');
+            } else if (timeLeft <= 20) {
+                timerBox.classList.replace('timer-warning', 'timer-critical');
+                if (timerBox.classList.contains('bg-dark')) timerBox.classList.replace('bg-dark', 'timer-critical');
+            }
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                alert("Time's up! Submitting your quiz automatically.");
+                saveTimeAndSubmit();
+            }
+        }, 1000);
+    } else {
+        setInterval(() => { if(!quizSubmitted) secondsElapsed++; }, 1000);
     }
+
+    // Choice Processing (Instant Feedback)
+    function processChoice(element, userVal, correctVal, isStd = false) {
+        const parentGroup = element.closest('.options-group');
+        
+        // Disable other options in this specific card to prevent multiple flashes
+        const options = parentGroup.querySelectorAll('.option-btn');
+        options.forEach(opt => opt.style.pointerEvents = 'none');
+
+        let isCorrect = isStd ? (correctVal === 'true') : (userVal === correctVal);
+
+        if (isCorrect) {
+            element.classList.add('correct-flash');
+        } else {
+            element.classList.add('wrong-flash');
+            // Logic to flash the correct answer could be added here
+        }
+
+        // Auto-advance after feedback
+        setTimeout(() => {
+            if (currentIdx < totalQuestions) {
+                changeQuestion(1);
+            } else {
+                showSubmitButton();
+            }
+        }, 800);
+    }
+
+    function changeQuestion(step) {
+        // Validation
+        if (currentIdx + step < 1 || currentIdx + step > totalQuestions) return;
+
+        // Hide current
+        document.getElementById(`q-card-${currentIdx}`).classList.add('d-none');
+        
+        // Update index
+        currentIdx += step;
+        
+        // Show next
+        document.getElementById(`q-card-${currentIdx}`).classList.remove('d-none');
+
+        // Navigation UI visibility
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+
+        // Toggle Previous Button
+        if (currentIdx === 1) {
+            prevBtn.classList.add('invisible');
+        } else {
+            prevBtn.classList.remove('invisible');
+        }
+
+        // Toggle Next/Submit Buttons
+        if (currentIdx === totalQuestions) {
+            nextBtn.classList.add('d-none');
+            submitBtn.classList.remove('d-none');
+        } else {
+            nextBtn.classList.remove('d-none');
+            submitBtn.classList.add('d-none');
+        }
+
+        updateProgress();
+    }
+
+    function showSubmitButton() {
+        document.getElementById('next-btn').classList.add('d-none');
+        document.getElementById('submit-btn').classList.remove('d-none');
+        document.getElementById('submit-btn').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function updateProgress() {
+        const percent = (currentIdx / totalQuestions) * 100;
+        document.getElementById('quiz-progress').style.width = percent + '%';
+    }
+
+    function saveTimeAndSubmit() {
+        if (quizSubmitted) return;
+        quizSubmitted = true;
+
+        const mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+        const secs = (secondsElapsed % 60).toString().padStart(2, '0');
+        document.getElementById('time_spent_input').value = `${mins}:${secs}`;
+        
+        const btn = document.getElementById('submit-btn');
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Calculating Score...';
+        btn.classList.add('disabled');
+
+        document.getElementById('quiz-form').submit();
+    }
+
+    document.getElementById('quiz-form').onsubmit = function(e) {
+        e.preventDefault();
+        saveTimeAndSubmit();
+    };
+
+    updateProgress();
 </script>
 {% endblock %}

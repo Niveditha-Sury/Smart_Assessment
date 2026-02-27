@@ -1,43 +1,204 @@
 {% extends 'base.html' %}
+
 {% block content %}
-<div class="container py-5 text-center">
-    <div class="card shadow-lg border-0 p-5 rounded-5 mx-auto" style="max-width: 700px;">
-        <h1 class="display-4 fw-bold mb-3">Quiz Finished!</h1>
+<div class="container py-5">
+    <div class="card shadow-lg border-0 p-4 p-md-5 rounded-5 mx-auto" style="max-width: 850px; background: #fff;">
         
-        <div class="my-4">
-            <div class="display-1 fw-bold text-primary">{{ percentage|floatformat:0 }}%</div>
-            <p class="lead text-muted">You got {{ score }} out of {{ total }} correct.</p>
+        <div class="text-center mb-4">
+            <div class="badge rounded-pill {% if percentage >= 70 %}bg-success-subtle text-success{% elif percentage >= 40 %}bg-warning-subtle text-warning{% else %}bg-danger-subtle text-danger{% endif %} px-3 py-2 mb-2">
+                {% if is_ai %}✨ AI Generation Mode{% else %}📚 Standard Mode{% endif %}
+            </div>
+            <h1 class="display-5 fw-bold mb-2">
+                {% if percentage >= 80 %}Outstanding! 🏆
+                {% elif percentage >= 60 %}Great Job! 👏
+                {% elif percentage >= 40 %}Keep it up! 💪
+                {% else %}Don't give up! 📚{% endif %}
+            </h1>
+            <p class="text-muted">Here is your performance summary</p>
         </div>
 
-        <div class="progress mb-5" style="height: 20px; border-radius: 50px; background-color: #e9ecef;">
-            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
-                 role="progressbar" 
-                 aria-valuenow="{{ percentage|default:0 }}" 
-                 aria-valuemin="0" 
-                 aria-valuemax="100"
-                 style="width: 100%;"> 
-                 </div>
-        </div>
-
-        <h4 class="text-start fw-bold mb-3">Review Answers</h4>
-        <div class="list-group list-group-flush text-start">
-            {% for res in results %}
-            <div class="list-group-item border-0 px-0 mb-3 border-bottom">
-                <p class="fw-bold mb-1">{{ forloop.counter }}. {{ res.question }}</p>
-                <div class="small">
-                    Your answer: <span class="{% if res.is_correct %}text-success{% else %}text-danger{% endif %} fw-bold">{{ res.user_choice }}</span> <br>
-                    {% if not res.is_correct %}
-                    Correct answer: <span class="text-success fw-bold">{{ res.correct_choice }}</span>
-                    {% endif %}
+        <div class="row g-3 mb-5 text-center">
+            <div class="col-6 col-md-3">
+                <div class="p-3 border rounded-4 bg-light shadow-sm">
+                    <small class="text-uppercase fw-bold text-muted d-block mb-1" style="font-size: 0.7rem;">Score</small>
+                    <span class="h4 fw-bold text-primary">{{ score }}/{{ total }}</span>
                 </div>
             </div>
-            {% endfor %}
+            <div class="col-6 col-md-3">
+                <div class="p-3 border rounded-4 bg-light shadow-sm">
+                    <small class="text-uppercase fw-bold text-muted d-block mb-1" style="font-size: 0.7rem;">Accuracy</small>
+                    <span class="h4 fw-bold text-primary">{{ percentage }}%</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3 border rounded-4 bg-light shadow-sm">
+                    <small class="text-uppercase fw-bold text-muted d-block mb-1" style="font-size: 0.7rem;">Difficulty</small>
+                    <span class="h4 fw-bold text-primary">{{ difficulty|default:"Medium" }}</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3 border rounded-4 bg-light shadow-sm">
+                    <small class="text-uppercase fw-bold text-muted d-block mb-1" style="font-size: 0.7rem;">Time Spent</small>
+                    <span class="h4 fw-bold text-primary">{{ time_spent|default:"00:00" }}</span>
+                </div>
+            </div>
         </div>
 
-        <div class="d-flex gap-3 justify-content-center mt-4">
-            <a href="{% url 'quiz_categories' %}" class="btn btn-primary rounded-pill px-4">Try Another</a>
-            <a href="/" class="btn btn-outline-secondary rounded-pill px-4">Dashboard</a>
+        <div class="progress mb-5" style="height: 15px; border-radius: 50px; background-color: #f0f0f0;">
+            <div id="resultBar" class="progress-bar progress-bar-striped progress-bar-animated {% if percentage >= 70 %}bg-success{% elif percentage >= 40 %}bg-warning{% else %}bg-danger{% endif %}" 
+                 role="progressbar" style="width: 0%; transition: width 1.5s ease-in-out;">
+            </div>
+        </div>
+
+    <div class="review-section">
+    <h5 class="fw-bold mb-4 d-flex align-items-center">
+        <i class="bi bi-patch-check-fill me-2 text-primary"></i> Detailed Question Review
+    </h5>
+    <div class="accordion accordion-flush border rounded-4 overflow-hidden" id="reviewAccordion">
+        {% for res in results %}
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed py-3" type="button" data-bs-toggle="collapse" data-bs-target="#res-{{ forloop.counter }}">
+                    <span class="me-3">
+                        {% if res.is_correct %}
+                            <i class="bi bi-check-circle-fill text-success h5"></i>
+                        {% else %}
+                            <i class="bi bi-x-circle-fill text-danger h5"></i>
+                        {% endif %}
+                    </span>
+                    <span class="text-dark fw-medium">Question {{ forloop.counter }}</span>
+                    {% if not res.is_correct %}
+                        <span class="badge bg-danger ms-auto me-3">View AI Correction</span>
+                    {% endif %}
+                </button>
+            </h2>
+            <div id="res-{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#reviewAccordion">
+                <div class="accordion-body bg-light-subtle">
+                    <p class="fw-bold text-secondary mb-3">{{ res.question }}</p>
+                    
+                    <div class="row g-3">
+                        {% if res.is_correct %}
+                            <div class="col-12">
+                                <div class="p-3 border rounded-3 bg-success-subtle border-success d-flex align-items-center">
+                                    <i class="bi bi-check-circle-fill text-success me-3 fs-4"></i>
+                                    <div>
+                                        <small class="d-block text-uppercase fw-bold opacity-75" style="font-size: 0.65rem;">Correct Answer</small>
+                                        <div class="fw-bold text-success">{{ res.user_choice }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded-3 bg-danger-subtle border-danger">
+                                    <small class="d-block text-uppercase fw-bold opacity-75" style="font-size: 0.65rem;">Your Answer (Incorrect)</small>
+                                    <div class="fw-bold text-danger">{{ res.user_choice }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded-3 bg-success-subtle border-success">
+                                    <small class="d-block text-uppercase fw-bold opacity-75" style="font-size: 0.65rem;">The Correct Answer</small>
+                                    <div class="fw-bold text-success">{{ res.correct_choice }}</div>
+                                </div>
+                            </div>
+                            
+                            {% if res.explanation %}
+                            <div class="col-12">
+                                <div class="p-3 border-0 rounded-4 ai-explanation-box shadow-sm mt-2">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="ai-icon-circle me-2">
+                                            <i class="bi bi-robot text-info"></i>
+                                        </div>
+                                        <small class="text-info fw-bold text-uppercase" style="letter-spacing: 1px;">AI Learning Insight</small>
+                                    </div>
+                                    <p class="mb-0 text-dark-emphasis italic small">
+                                        {{ res.explanation }}
+                                    </p>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    </div>
+
+        <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center mt-5">
+            <a href="{% url 'quiz_categories' %}" class="btn btn-primary rounded-pill px-5 py-3 fw-bold shadow-sm">Try Another Quiz</a>
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-dark rounded-pill px-5 py-3 fw-bold">Return to Dashboard</a>
         </div>
     </div>
 </div>
+
+<style>
+    .bg-success-subtle { background-color: #d1e7dd !important; }
+    .bg-warning-subtle { background-color: #fff3cd !important; }
+    .bg-danger-subtle { background-color: #f8d7da !important; }
+    
+    .accordion-button:not(.collapsed) { background-color: #f8f9fa; box-shadow: none; }
+    
+    /* Fade in the section ONCE when the page loads */
+    .review-section {
+        opacity: 0;
+        transition: opacity 1s ease-in;
+    }
+    
+    .reveal-review {
+        opacity: 1 !important;
+    }
+
+    /* Keep the progress bar movement smooth */
+    #resultBar {
+        transition: width 2s ease-in-out !important;
+    }
+
+    /* AI Explanation Styling (Task 12) */
+    .ai-explanation-box {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f0f4f8 100%);
+        border-left: 5px solid #0dcaf0 !important;
+    }
+
+    .ai-icon-circle {
+        width: 24px;
+        height: 24px;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .italic { font-style: italic; }
+
+    /* Ensure accordion content is always visible when expanded */
+    .accordion-collapse.show {
+        visibility: visible !important;
+        display: block !important;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const resultBar = document.getElementById('resultBar');
+        const reviewSection = document.querySelector('.review-section');
+
+        // Step 1: Wait 1 second, then animate the progress bar slowly
+        setTimeout(() => {
+            if (resultBar) {
+                resultBar.style.width = "{{ percentage }}%";
+            }
+        }, 1000);
+
+        // Step 2: Wait 2.5 seconds (after bar is mostly done) to show the Review Section
+        setTimeout(() => {
+            if (reviewSection) {
+                reviewSection.classList.add('reveal-review');
+            }
+        }, 2500);
+    });
+</script>
+
 {% endblock %}

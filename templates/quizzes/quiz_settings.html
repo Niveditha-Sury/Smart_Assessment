@@ -2,19 +2,13 @@
 
 {% block content %}
 <style>
-    .settings-card {
-        border-radius: 30px;
-        background: #ffffff;
-        border: 1px solid rgba(0,0,0,0.05);
-    }
+    .settings-card { border-radius: 30px; background: #ffffff; border: 1px solid rgba(0,0,0,0.05); }
     .form-label-bold { font-weight: 700; color: #495057; margin-bottom: 10px; }
-    
-    /* Modern Radio Group */
     .btn-check:checked + .btn-outline-primary {
-        background-color: #0d6efd;
-        color: white;
+        background-color: #0d6efd; color: white;
         box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
     }
+    #timerDurationContainer { transition: all 0.3s ease; }
 </style>
 
 <div class="container py-5">
@@ -34,10 +28,8 @@
                         <div class="btn-group w-100" role="group">
                             <input type="radio" class="btn-check" name="difficulty" id="easy" value="Easy" checked>
                             <label class="btn btn-outline-primary rounded-start-pill" for="easy">Easy</label>
-
                             <input type="radio" class="btn-check" name="difficulty" id="medium" value="Medium">
                             <label class="btn btn-outline-primary" for="medium">Medium</label>
-
                             <input type="radio" class="btn-check" name="difficulty" id="hard" value="Hard">
                             <label class="btn btn-outline-primary rounded-end-pill" for="hard">Hard</label>
                         </div>
@@ -52,11 +44,21 @@
                         </select>
                     </div>
 
-                    <div class="mb-5 d-flex justify-content-between align-items-center bg-light p-3 rounded-4">
+                    <div class="mb-3 d-flex justify-content-between align-items-center bg-light p-3 rounded-4">
                         <label class="form-label-bold mb-0" for="timerToggle">Enable Timer</label>
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="timer" id="timerToggle" style="transform: scale(1.3);" checked>
+                            <input class="form-check-input" type="checkbox" name="timer" id="timerToggle" style="transform: scale(1.3);" checked onchange="toggleDuration()">
                         </div>
+                    </div>
+
+                    <div id="timerDurationContainer" class="mb-4">
+                        <label class="form-label-bold">Select Duration</label>
+                        <select name="timer_duration" class="form-select rounded-pill p-3 border-primary text-primary fw-bold">
+                            <option value="5">5 Minutes</option>
+                            <option value="10">10 Minutes</option>
+                            <option value="20">20 Minutes</option>
+                            <option value="30">30 Minutes</option>
+                        </select>
                     </div>
 
                     <button type="submit" class="btn-dynamic w-100 py-3 shadow">
@@ -67,4 +69,14 @@
         </div>
     </div>
 </div>
+
+<script>
+function toggleDuration() {
+    const container = document.getElementById('timerDurationContainer');
+    const toggle = document.getElementById('timerToggle');
+    container.style.display = toggle.checked ? 'block' : 'none';
+}
+// Initialize state on load
+document.addEventListener('DOMContentLoaded', toggleDuration);
+</script>
 {% endblock %}

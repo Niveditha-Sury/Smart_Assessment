@@ -1,4 +1,6 @@
 import os
+
+
 """
 Django settings for core project.
 
@@ -12,6 +14,11 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -139,3 +146,5 @@ LOGIN_URL = 'login'
 MEDIA_URL = '/media/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+GGROQ_API_KEY = os.environ.get("GROQ_API_KEY")
