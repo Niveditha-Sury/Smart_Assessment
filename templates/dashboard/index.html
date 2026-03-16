@@ -1,129 +1,156 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="d-flex align-items-center justify-content-between mb-5">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container py-4 py-md-5">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 mb-md-5 gap-3">
         <div>
-            <h2 class="fw-bold text-dark mb-1">Welcome back, {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}!</h2>
-            <p class="text-muted">Here's your learning progress at a glance.</p>
+            <h2 class="fw-bold text-dark mb-1">Welcome, {{ user.username }}!</h2>
+            <p class="text-muted mb-0">Your learning progress at a glance.</p>
         </div>
-        <div class="text-end">
-            <span class="badge bg-soft-primary text-primary px-3 py-2 rounded-pill">
-                <i class="fas fa-calendar-alt me-1"></i> {% now "jS F Y" %}
-            </span>
+        <div class="bg-white shadow-sm px-4 py-2 text-center" style="border-radius: 15px; border: 2px solid #ffc107;">
+            <span class="fs-4">🔥</span>
+            <span class="fw-bold text-dark">{{ profile.streak|default:0 }} Day Streak</span>
         </div>
     </div>
-    
-    <div class="row g-4">
-        <div class="col-md-5">
-            <div class="card h-100 border-0 shadow-sm p-4 text-white" 
-                 style="background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%); border-radius: 20px;">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <h5 class="opacity-75 mb-1">Current Streak</h5>
-                        <h1 class="display-3 fw-bold mb-0">{{ profile.streak|default:0 }} <span class="fs-4">Days</span></h1>
-                    </div>
-                    <div class="fs-1 opacity-50">🔥</div>
-                </div>
-                <div class="mt-4 pt-2 border-top border-white border-opacity-25">
-                    <p class="small mb-0">Don't break the chain! Complete a quiz today to keep it going.</p>
-                </div>
+
+    <div class="row g-3 g-md-4 mb-4">
+        <div class="col-12 col-md-3">
+            <div class="card border-0 shadow-sm p-3 text-center h-100" style="border-radius: 15px; border-left: 5px solid #4e73df;">
+                <small class="text-primary fw-bold text-uppercase">Total Quizzes</small>
+                <div class="h3 mb-0 fw-bold">{{ total_quizzes }}</div>
             </div>
         </div>
-
-        <div class="col-md-7">
-            <div class="card h-100 border-0 shadow-sm p-4" style="border-radius: 20px;">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold text-dark mb-0">Overall Mastery</h5>
-                    <span class="badge bg-primary rounded-pill">{{ mastery_level|floatformat:0 }}% Complete</span>
-                </div>
-                
-                <div class="progress mb-3" style="height: 35px; border-radius: 12px; background-color: #f0f2f5;">
-                    <div id="mastery-progress-bar" 
-                         class="progress-bar progress-bar-striped progress-bar-animated" 
-                         role="progressbar" 
-                         aria-valuenow="{{ mastery_level|default:0 }}" 
-                         aria-valuemin="0" 
-                         aria-valuemax="100"
-                         style="background-color: #4e73df; border-radius: 12px;">
-                        {{ mastery_level|floatformat:0 }}%
-                    </div>
-                </div>
-                
-                <div class="d-flex align-items-center text-muted">
-                    <div class="flex-grow-1">
-                        <p class="small mb-0">Target: 100% across all 12 subcategories</p>
-                    </div>
-                    <i class="fas fa-info-circle" data-bs-toggle="tooltip" title="Progress based on completed topics."></i>
-                </div>
+        <div class="col-12 col-md-3">
+            <div class="card border-0 shadow-sm p-3 text-center h-100" style="border-radius: 15px; border-left: 5px solid #1cc88a;">
+                <small class="text-success fw-bold text-uppercase">Avg Score</small>
+                <div class="h3 mb-0 fw-bold">{{ avg_score }}%</div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="card border-0 shadow-sm p-3 text-center h-100" style="border-radius: 15px; border-left: 5px solid #f6c23e;">
+                <small class="text-warning fw-bold text-uppercase">Best Score</small>
+                <div class="h3 mb-0 fw-bold">{{ best_score }}%</div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="card border-0 shadow-sm p-3 text-center h-100" style="border-radius: 15px; border-left: 5px solid #6f42c1;">
+                <small class="text-purple fw-bold text-uppercase" style="color: #6f42c1;">Completed Subs</small>
+                <div class="h3 mb-0 fw-bold">{{ completed_count|default:0 }}</div>
             </div>
         </div>
     </div>
 
-    <div class="row mt-5">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
-                <h5 class="fw-bold text-dark mb-4">Subject Completion Breakdown</h5>
-                <div class="row g-3">
-                    {% for sub in all_subcategories %}
-                    <div class="col-lg-3 col-md-4 col-sm-6">
-                        <div class="p-3 rounded-4 border d-flex align-items-center transition-hover h-100 
-                             {% if sub in profile.completed_subcategories.all %}bg-light-success border-success-subtle{% else %}bg-white border-light{% endif %}">
-                            
-                            {% if sub in profile.completed_subcategories.all %}
-                                <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 30px; height: 30px;">
-                                    <i class="fas fa-check small"></i>
-                                </div>
-                                <span class="fw-semibold text-dark">{{ sub.name }}</span>
-                            {% else %}
-                                <div class="bg-light text-muted rounded-circle d-flex align-items-center justify-content-center me-3 border" style="width: 30px; height: 30px;">
-                                    <i class="far fa-circle small"></i>
-                                </div>
-                                <span class="text-muted">{{ sub.name }}</span>
-                            {% endif %}
-                        </div>
+    <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 20px;">
+        <div class="d-flex justify-content-between mb-2">
+            <span class="fw-bold">Overall Mastery</span>
+            <span class="fw-bold text-primary">{{ mastery_level }}%</span>
+        </div>
+        <div class="progress" style="height: 12px; border-radius: 10px; background-color: #eaecf4;">
+            <div id="mastery-progress-bar" class="progress-bar bg-primary" role="progressbar" 
+                 style="width: 0%; transition: width 1.5s ease-in-out;"></div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 20px;">
+                <h5 class="fw-bold mb-4">Score Trends</h5>
+                <div id="trend-container" style="position: relative; height: 250px; width: 100%;">
+                    <canvas id="scoreTrendChart"></canvas>
+                    <div id="no-trend-data" class="d-none h-100 d-flex align-items-center justify-content-center text-muted">
+                        Complete a quiz to see your performance trend!
                     </div>
-                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 20px;">
+                <h5 class="fw-bold mb-4">Categories</h5>
+                <div id="cat-container" style="position: relative; height: 250px; width: 100%;">
+                    <canvas id="categoryPieChart"></canvas>
+                    <div id="no-cat-data" class="d-none h-100 d-flex align-items-center justify-content-center text-muted text-center">
+                        Take quizzes in different categories to see distribution!
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+    {% if incomplete_quizzes %}
+    <div class="mb-5">
+        <h5 class="fw-bold mb-3">Resume Learning</h5>
+        <div class="row g-3">
+            {% for quiz in incomplete_quizzes %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm p-3 d-flex flex-row justify-content-between align-items-center" style="border-radius: 15px; border-right: 4px solid #ffc107;">
+                    <div class="text-truncate me-2">
+                        <div class="fw-bold text-truncate">{{ quiz.subcategory_name }}</div>
+                        <small class="text-muted d-block">{{ quiz.created_at|date:"D, M d" }} at {{ quiz.created_at|date:"H:i" }}</small>
+                    </div>
+                    <a href="{% url 'start_quiz_engine' quiz.id %}" class="btn btn-sm btn-warning rounded-pill px-3 flex-shrink-0 fw-bold">Resume</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 </div>
-
-<style>
-    /* Custom Styling for the Theme */
-    body { background-color: #f8f9fc; }
-    
-    .bg-soft-primary { background-color: rgba(78, 115, 223, 0.1); }
-    .bg-light-success { background-color: #f0fff4; }
-    
-    .transition-hover {
-        transition: all 0.3s ease;
-    }
-    
-    .transition-hover:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-
-    .rounded-4 { border-radius: 1rem !important; }
-    
-    /* Smooth transition for the JS progress bar */
-    #mastery-progress-bar {
-        transition: width 1.2s cubic-bezier(0.1, 0.7, 1.0, 0.1);
-    }
-</style>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const progressBar = document.getElementById('mastery-progress-bar');
-        const percentage = "{{ mastery_level|default:0 }}";
-        
-        // Timeout to allow the "Entrance" animation to feel smooth
-        setTimeout(() => {
-            progressBar.style.width = percentage + "%";
-            progressBar.style.minWidth = "2.5em";
-        }, 200);
+        if (progressBar) {
+            setTimeout(() => { 
+                progressBar.style.width = "{{ mastery_level|default:0 }}%"; 
+            }, 300);
+        }
+
+        const trendLabels = JSON.parse('{{ trend_labels_js|safe }}' || '[]');
+        const trendScores = JSON.parse('{{ trend_scores_js|safe }}' || '[]');
+        const catLabels = JSON.parse('{{ cat_labels_js|safe }}' || '[]');
+        const catCounts = JSON.parse('{{ cat_counts_js|safe }}' || '[]');
+
+        // Trend Chart Logic
+        if (trendLabels.length > 0) {
+            new Chart(document.getElementById('scoreTrendChart'), {
+                type: 'line',
+                data: {
+                    labels: trendLabels,
+                    datasets: [{
+                        label: 'Score %',
+                        data: trendScores,
+                        borderColor: '#4e73df',
+                        backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+        } else {
+            document.getElementById('scoreTrendChart').classList.add('d-none');
+            document.getElementById('no-trend-data').classList.remove('d-none');
+        }
+
+        // Pie Chart Logic
+        if (catLabels.length > 0) {
+            new Chart(document.getElementById('categoryPieChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: catLabels,
+                    datasets: [{
+                        data: catCounts,
+                        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '75%' }
+            });
+        } else {
+            document.getElementById('categoryPieChart').classList.add('d-none');
+            document.getElementById('no-cat-data').classList.remove('d-none');
+        }
     });
 </script>
 {% endblock %}

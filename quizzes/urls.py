@@ -8,10 +8,12 @@ urlpatterns = [
     
     # Mode 1: Standard (Database) Quiz
     path('settings/<int:subcategory_id>/', views.quiz_settings, name='quiz_settings'),
-    path('start/', views.start_quiz_engine, name='start_quiz_engine'),
-    path('submit/', views.submit_quiz, name='submit_quiz'), 
+    path('take/<int:quiz_id>/', views.start_quiz_engine, name='start_quiz_engine'),
+    path('submit/<int:quiz_id>/', views.submit_quiz, name='submit_quiz'),
     path('step/<int:step>/', views.quiz_step, name='quiz_step'),
     path('save-answer/<int:step>/', views.save_answer, name='save_answer'),
+    path('history/', views.quiz_history, name='quiz_history'),
+    path('retake/<int:attempt_id>/', views.retake_quiz, name='retake_quiz'),
     
     # Mode 2: AI (Groq) Quiz
     path('quiz/loading/<int:sub_id>/', views.quiz_loading_page, name='quiz_loading'),

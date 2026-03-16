@@ -35,35 +35,38 @@
 
 <body class="bg-slate-50">
     <nav class="bg-white border-b border-slate-200">
-        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <a href="{% url 'home' %}" class="text-2xl font-bold text-indigo-600">Smart Assess</a>
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <a href="{% url 'home' %}" class="text-2xl font-bold text-indigo-600">Smart Assess</a>
 
-            <div class="flex items-center space-x-8 font-medium">
-                <a href="{% url 'home' %}" class="text-slate-600 hover:text-indigo-600 transition-colors">Home</a>
+        <div class="flex items-center space-x-8 font-medium">
+            <a href="{% url 'home' %}" class="text-slate-600 hover:text-indigo-600 transition-colors">Home</a>
 
-                {% if user.is_authenticated %}
-                    <div class="flex items-center space-x-4">
-                        <span class="text-slate-700 text-sm font-semibold">Hi, {{ user.username }}</span>
-                        
-                        <div class="h-10 w-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center border border-indigo-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                        </div>
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}" class="text-slate-600 hover:text-indigo-600 transition-colors">Dashboard</a>
+                <a href="{% url 'leaderboard' %}" class="text-slate-600 hover:text-indigo-600 transition-colors">Leaderboard</a>
+                <a href="{% url 'quiz_history' %}" class="text-slate-600 hover:text-indigo-600 transition-colors">History</a>
 
-                        <form action="{% url 'logout' %}" method="post" class="inline">
-                            {% csrf_token %}
-                            <button type="submit" class="text-slate-500 hover:text-red-600 text-sm font-semibold transition-colors">Logout</button>
-                        </form>
+                <div class="flex items-center space-x-4 ml-4">
+                    <span class="text-slate-700 text-sm font-semibold">Hi, {{ user.username }}</span>
+                    <div class="h-10 w-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center border border-indigo-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
                     </div>
-                {% else %}
-                    <a href="{% url 'login' %}" class="text-slate-600 hover:text-indigo-600 transition-colors">Login</a>
-                    <a href="{% url 'register' %}" class="inline-flex items-center justify-center bg-indigo-600 text-white px-6 py-2.5 rounded-full hover:bg-indigo-700 transition-all shadow-md">
-                        Register
-                    </a>
-                {% endif %}
-            </div>
+
+                    <form action="{% url 'logout' %}" method="post" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="text-slate-500 hover:text-red-600 text-sm font-semibold transition-colors">Logout</button>
+                    </form>
+                </div>
+            {% else %}
+                <a href="{% url 'login' %}" class="text-slate-600 hover:text-indigo-600 transition-colors">Login</a>
+                <a href="{% url 'register' %}" class="inline-flex items-center justify-center bg-indigo-600 text-white px-6 py-2.5 rounded-full hover:bg-indigo-700 transition-all shadow-md">
+                    Register
+                </a>
+            {% endif %}
         </div>
+    </div>
     </nav>
 
     {% if messages %}

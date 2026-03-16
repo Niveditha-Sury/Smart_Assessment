@@ -33,27 +33,47 @@ def quiz_settings(request, subcategory_id):
             'timer_enabled': timer_enabled,
             'time_limit': timer_duration * 60
         }
-        return redirect('start_quiz_engine') 
+        attempt = QuizAttempt.objects.create(user=request.user)
+        return redirect('start_quiz_engine', quiz_id=attempt.id)
     return render(request, 'quizzes/quiz_settings.html', {'subcategory': subcategory})
 
-def start_quiz_engine(request):
+def start_quiz_engine(request, quiz_id):
+    attempt = get_object_or_404(QuizAttempt, id=quiz_id, user=request.user)
+    
+    # 1. Block access if already finished
+    if attempt.is_completed:
+        return redirect('dashboard:dashboard')
+    
     config = request.session.get('quiz_config')
     if not config:
         return redirect('quiz_categories')
 
     sub_id = config.get('subcategory_id')
-    all_questions = Question.objects.filter(
-        subcategory_id=sub_id,
-        difficulty=config.get('difficulty')
-    )
+    
+    # 2. Check if questions are already assigned in the session
+    # This prevents the questions from changing if the user refreshes/resumes
+    assigned_ids = request.session.get('quiz_question_ids')
 
-    questions_list = list(all_questions)
-    num_to_pick = min(len(questions_list), int(config.get('num_questions', 5)))
-    selected_questions = random.sample(questions_list, num_to_pick) if questions_list else []
+    if assigned_ids:
+        # Fetch the specific questions already stored in the session
+        selected_questions = Question.objects.filter(id__in=assigned_ids)
+        # Order them to match the session list order
+        selected_questions = sorted(selected_questions, key=lambda q: assigned_ids.index(q.id))
+    else:
+        # First time starting this quiz session: pick new questions
+        all_questions = Question.objects.filter(
+            subcategory_id=sub_id,
+            difficulty=config.get('difficulty')
+        )
+        questions_list = list(all_questions)
+        num_to_pick = min(len(questions_list), int(config.get('num_questions', 5)))
+        selected_questions = random.sample(questions_list, num_to_pick) if questions_list else []
+        
+        # Save these IDs so they persist during a "Resume"
+        request.session['quiz_question_ids'] = [q.id for q in selected_questions]
+        request.session['user_answers'] = {}
 
-    request.session['quiz_question_ids'] = [q.id for q in selected_questions]
-    request.session['user_answers'] = {} 
-
+    num_to_pick = len(selected_questions)
     timer_enabled = config.get('timer_enabled', False)
     time_limit = num_to_pick * 60 if timer_enabled else 0
    
@@ -63,6 +83,7 @@ def start_quiz_engine(request):
         'is_ai': False,
         'timer_enabled': timer_enabled,
         'time_limit': time_limit, 
+        'attempt': attempt, # Passing the ID 24 here
     }
     return render(request, 'quizzes/quiz_play.html', context)
                     
@@ -88,11 +109,15 @@ def quiz_step(request, step):
     }
     return render(request, 'quizzes/quiz_play.html', context)
 
-def submit_quiz(request):
+def submit_quiz(request, quiz_id):
+    # Fetch the existing attempt that was created when the quiz started
+    attempt = get_object_or_404(QuizAttempt, id=quiz_id, user=request.user)
+    
     if request.method == 'POST':
         score = 0
         total_questions = 0
         results = []
+        
         config = request.session.get('quiz_config', {})
         sub_id = config.get('subcategory_id')
         difficulty = config.get('difficulty', 'Medium')
@@ -105,6 +130,7 @@ def submit_quiz(request):
             if subcategory:
                 sub_name = subcategory.name
 
+        # --- Scoring Logic ---
         if is_ai:
             ai_data = request.session.get('ai_quiz_data', [])
             total_questions = len(ai_data)
@@ -114,7 +140,6 @@ def submit_quiz(request):
                 is_correct = (user_ans == correct_ans)
                 if is_correct: score += 1
                 
-                # TASK 12: Generate explanation only for wrong answers
                 explanation = ""
                 if not is_correct:
                     explanation = get_ai_explanation(q.get('text'), correct_ans)
@@ -124,7 +149,7 @@ def submit_quiz(request):
                     'user_choice': user_ans or "No Answer",
                     'correct_choice': correct_ans,
                     'is_correct': is_correct,
-                    'explanation': explanation # Added to dictionary
+                    'explanation': explanation 
                 })
         else:
             for key, value in request.POST.items():
@@ -138,7 +163,6 @@ def submit_quiz(request):
                         is_correct = (correct_choice == user_choice)
                         if is_correct: score += 1
                         
-                        # TASK 12: Generate explanation only for wrong answers
                         explanation = ""
                         if not is_correct:
                             correct_text = correct_choice.text if correct_choice else "N/A"
@@ -149,26 +173,27 @@ def submit_quiz(request):
                             'user_choice': user_choice.text if user_choice else "No Answer",
                             'correct_choice': correct_choice.text if correct_choice else "N/A",
                             'is_correct': is_correct,
-                            'explanation': explanation # Added to dictionary
+                            'explanation': explanation 
                         })
                     except Question.DoesNotExist:
                         continue
 
         percentage = int((score / total_questions * 100)) if total_questions > 0 else 0
 
-        # --- DATABASE SAVING LOGIC (STAYS SAME) ---
+        # --- UPDATE THE EXISTING ATTEMPT ---
+        # Instead of QuizAttempt.objects.create, we update the 'attempt' object
+        attempt.subcategory_name = sub_name
+        attempt.score = score
+        attempt.total_questions = total_questions
+        attempt.percentage = percentage
+        attempt.difficulty = difficulty
+        attempt.time_spent = time_spent
+        attempt.is_ai = is_ai
+        attempt.is_completed = True # Mark as finished
+        attempt.save() # Save updates to DB
+
+        # --- Profile & Streak Logic ---
         if request.user.is_authenticated:
-            QuizAttempt.objects.create(
-                user=request.user,
-                subcategory_name=sub_name,
-                score=score,
-                total_questions=total_questions,
-                percentage=percentage,
-                difficulty=difficulty,
-                time_spent=time_spent,
-                is_ai=is_ai
-            )
-            
             profile = request.user.profile
             profile.update_streak()
             
@@ -186,15 +211,16 @@ def submit_quiz(request):
             'time_spent': time_spent,
             'is_ai': is_ai,
             'sub_name': sub_name,
-            'status': "Pass" if percentage >= 50 else "Fail" # Added for Task 11
+            'status': "Pass" if percentage >= 50 else "Fail"
         }
         
         if is_ai:
             request.session.pop('ai_quiz_data', None)
 
+        attempt.is_completed = True 
+        attempt.save()
+
         return render(request, 'quizzes/result.html', context)
-    
-    return redirect('quiz_categories')
 
 def process_ai_generation(request, sub_id):
     subcategory = get_object_or_404(Subcategory, id=sub_id)
@@ -257,10 +283,31 @@ def save_answer(request, step):
             return redirect('submit_quiz')
     return redirect('quiz_categories')
 
+def quiz_history(request):
+    """Fetches all completed quizzes for the logged-in user."""
+    history_list = QuizAttempt.objects.filter(
+        user=request.user, 
+        is_completed=True
+    ).order_by('-id')
+    return render(request, 'dashboard/history.html', {'history': history_list})
+
+def retake_quiz(request, attempt_id):
+    """Creates a new attempt based on a previous one."""
+    old_attempt = get_object_or_404(QuizAttempt, id=attempt_id, user=request.user)
+    
+    new_attempt = QuizAttempt.objects.create(
+        user=request.user,
+        subcategory_name=old_attempt.subcategory_name,
+        difficulty=old_attempt.difficulty,
+        score=0,
+        total_questions=0,
+        percentage=0.0,
+        is_completed=False
+    )
+    return redirect('start_quiz_engine', quiz_id=new_attempt.id)
+
 @csrf_exempt 
 def complete_subcategory(request, sub_id):
-
-
     if request.method == 'POST':
         return HttpResponse(status=200)
     return HttpResponse(status=400)

@@ -7,9 +7,8 @@
     .correct-flash { background-color: #198754 !important; color: white !important; border-color: #198754 !important; }
     .wrong-flash { background-color: #dc3545 !important; color: white !important; border-color: #dc3545 !important; }
     .option-btn { pointer-events: auto; }
-    /* Removed .disabled-options to allow re-navigation, but kept logic in JS */
 
-    /* Task 9: Timer Warning Animations */
+    /* Timer Warning Animations */
     .timer-warning { background-color: #ffc107 !important; color: #000 !important; }
     .timer-critical { 
         background-color: #dc3545 !important; 
@@ -37,7 +36,7 @@
                 {% endif %}
             </div>
 
-            <form id="quiz-form" method="POST" action="{% url 'submit_quiz' %}">
+            <form id="quiz-form" method="POST" action="{% url 'submit_quiz' attempt.id %}">
                 {% csrf_token %}
                 <input type="hidden" name="time_spent" id="time_spent_input" value="00:00">
                 <input type="hidden" name="is_ai" value="{{ is_ai }}">
@@ -125,8 +124,11 @@
             if (timeLeft <= 60 && timeLeft > 20) {
                 timerBox.classList.replace('bg-dark', 'timer-warning');
             } else if (timeLeft <= 20) {
-                timerBox.classList.replace('timer-warning', 'timer-critical');
-                if (timerBox.classList.contains('bg-dark')) timerBox.classList.replace('bg-dark', 'timer-critical');
+                if (timerBox.classList.contains('bg-dark')) {
+                    timerBox.classList.replace('bg-dark', 'timer-critical');
+                } else {
+                    timerBox.classList.replace('timer-warning', 'timer-critical');
+                }
             }
 
             if (timeLeft <= 0) {
@@ -142,8 +144,6 @@
     // Choice Processing (Instant Feedback)
     function processChoice(element, userVal, correctVal, isStd = false) {
         const parentGroup = element.closest('.options-group');
-        
-        // Disable other options in this specific card to prevent multiple flashes
         const options = parentGroup.querySelectorAll('.option-btn');
         options.forEach(opt => opt.style.pointerEvents = 'none');
 
@@ -153,10 +153,8 @@
             element.classList.add('correct-flash');
         } else {
             element.classList.add('wrong-flash');
-            // Logic to flash the correct answer could be added here
         }
 
-        // Auto-advance after feedback
         setTimeout(() => {
             if (currentIdx < totalQuestions) {
                 changeQuestion(1);
@@ -167,31 +165,22 @@
     }
 
     function changeQuestion(step) {
-        // Validation
         if (currentIdx + step < 1 || currentIdx + step > totalQuestions) return;
 
-        // Hide current
         document.getElementById(`q-card-${currentIdx}`).classList.add('d-none');
-        
-        // Update index
         currentIdx += step;
-        
-        // Show next
         document.getElementById(`q-card-${currentIdx}`).classList.remove('d-none');
 
-        // Navigation UI visibility
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
         const submitBtn = document.getElementById('submit-btn');
 
-        // Toggle Previous Button
         if (currentIdx === 1) {
             prevBtn.classList.add('invisible');
         } else {
             prevBtn.classList.remove('invisible');
         }
 
-        // Toggle Next/Submit Buttons
         if (currentIdx === totalQuestions) {
             nextBtn.classList.add('d-none');
             submitBtn.classList.remove('d-none');
@@ -206,7 +195,6 @@
     function showSubmitButton() {
         document.getElementById('next-btn').classList.add('d-none');
         document.getElementById('submit-btn').classList.remove('d-none');
-        document.getElementById('submit-btn').scrollIntoView({ behavior: 'smooth' });
     }
 
     function updateProgress() {
