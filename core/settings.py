@@ -37,6 +37,12 @@ ALLOWED_HOSTS = ['localhost',
     '127.0.0.1', 
     '.railway.app']
 
+# Added actual Railway URL
+CSRF_TRUSTED_ORIGINS = [
+    'smartassessment-system.up.railway.app',
+    'https://*.railway.app' # Wildcard to cover any Railway subdomain
+]
+
 
 # Application definition
 
