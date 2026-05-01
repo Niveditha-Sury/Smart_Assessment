@@ -2,13 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Smart Assessment</title>
+    
+    <!-- CSS Dependencies -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <style>
-        /* Global spacing */
+        /* Global spacing for Django forms */
         .django-form-content p {
             margin-bottom: 1.5rem;
         }
@@ -30,58 +33,111 @@
             border-color: #4f46e5;
             box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
         }
+
+        /* Fixing the Bootstrap/Tailwind conflict */
+        .navbar-toggler:focus { 
+            box-shadow: none !important; 
+            outline: none !important; 
+        }
+        /* Ensures the collapse doesn't glitch with Tailwind's global styles */
+        .collapse.show {
+            visibility: visible !important;
+            display: block !important;
+        }
     </style>
 </head>
 
-<body class="bg-slate-50">
-    <nav class="bg-white border-b border-slate-200">
-    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        <a href="{% url 'home' %}" class="text-2xl font-bold text-indigo-600">Smart Assess</a>
+<body class="bg-slate-50 d-flex flex-column min-vh-100">
+    <!-- Navbar Structure -->
+    <nav class="navbar navbar-expand-lg bg-white border-b border-slate-200 py-3">
+        <div class="container-fluid px-4">
+            <!-- Brand -->
+            <a href="{% url 'home' %}" class="text-2xl font-bold text-indigo-600 no-underline">Smart Assess</a>
 
-        <div class="flex items-center space-x-8 font-medium">
-            <a href="{% url 'home' %}" class="text-slate-600 hover:text-indigo-600 transition-colors">Home</a>
+            <!-- Hamburger Button -->
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#smartNavContent" aria-controls="smartNavContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-            {% if user.is_authenticated %}
-                <a href="{% url 'dashboard' %}" class="text-slate-600 hover:text-indigo-600 transition-colors">Dashboard</a>
-                <a href="{% url 'leaderboard' %}" class="text-slate-600 hover:text-indigo-600 transition-colors">Leaderboard</a>
-                <a href="{% url 'quiz_history' %}" class="text-slate-600 hover:text-indigo-600 transition-colors">History</a>
+            <!-- Collapsible Menu -->
+            <div class="collapse navbar-collapse" id="smartNavContent">
+                <!-- Using navbar-nav for proper Bootstrap alignment -->
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 font-medium">
+                    <li class="nav-item">
+                        <a href="{% url 'home' %}" class="nav-link text-slate-600 hover:text-indigo-600 px-lg-3">Home</a>
+                    </li>
 
-                <div class="flex items-center space-x-4 ml-4">
-                    <span class="text-slate-700 text-sm font-semibold">Hi, {{ user.username }}</span>
-                    <div class="h-10 w-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center border border-indigo-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                    </div>
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a href="{% url 'dashboard' %}" class="nav-link text-slate-600 hover:text-indigo-600 px-lg-3">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'leaderboard' %}" class="nav-link text-slate-600 hover:text-indigo-600 px-lg-3">Leaderboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'quiz_history' %}" class="nav-link text-slate-600 hover:text-indigo-600 px-lg-3">History</a>
+                        </li>
 
-                    <form action="{% url 'logout' %}" method="post" class="inline">
-                        {% csrf_token %}
-                        <button type="submit" class="text-slate-500 hover:text-red-600 text-sm font-semibold transition-colors">Logout</button>
-                    </form>
-                </div>
-            {% else %}
-                <a href="{% url 'login' %}" class="text-slate-600 hover:text-indigo-600 transition-colors">Login</a>
-                <a href="{% url 'register' %}" class="inline-flex items-center justify-center bg-indigo-600 text-white px-6 py-2.5 rounded-full hover:bg-indigo-700 transition-all shadow-md">
-                    Register
-                </a>
-            {% endif %}
+                        <!-- User Info & Logout (Mobile Friendly) -->
+                        <li class="nav-item border-t lg:border-t-0 border-slate-100 mt-2 lg:mt-0 pt-2 lg:pt-0">
+                            <div class="flex items-center space-x-4 lg:ml-4">
+                                <span class="text-slate-700 text-sm font-semibold hidden lg:block">Hi, {{ user.username }}</span>
+                                <form action="{% url 'logout' %}" method="post" class="m-0 p-0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="nav-link text-slate-500 hover:text-red-600 text-sm font-semibold border-0 bg-transparent py-2">Logout</button>
+                                </form>
+                            </div>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a href="{% url 'login' %}" class="nav-link text-slate-600 hover:text-indigo-600 px-lg-3">Login</a>
+                        </li>
+                        <li class="nav-item mt-2 lg:mt-0 lg:ml-3">
+                            <a href="{% url 'register' %}" class="inline-block bg-indigo-600 text-white px-6 py-2 rounded-full no-underline shadow-md w-full text-center hover:bg-indigo-700 transition-all">
+                                Register
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
         </div>
-    </div>
     </nav>
 
+    <!-- Message Alerts -->
     {% if messages %}
     <div class="max-w-7xl mx-auto px-6 mt-6">
         {% for message in messages %}
-        <div class="p-4 rounded-xl border {% if message.tags == 'success' %}bg-green-50 border-green-200 text-green-700{% elif message.tags == 'error' %}bg-red-50 border-red-200 text-red-700{% else %}bg-blue-50 border-blue-200 text-blue-700{% endif %} shadow-sm">
+        <div class="p-4 rounded-xl border {% if message.tags == 'success' %}bg-green-50 border-green-200 text-green-700{% elif message.tags == 'error' %}bg-red-50 border-red-200 text-red-700{% else %}bg-blue-50 border-blue-200 text-blue-700{% endif %} shadow-sm mb-3">
             {{ message }}
         </div>
         {% endfor %}
     </div>
     {% endif %}
 
-    <main class="py-10">
-        {% block content %}{% endblock %}
+    <!-- Page Content -->
+    <main class="py-6 lg:py-10 flex-grow-1">
+        <div class="container-fluid px-4">
+            {% block content %}{% endblock %}
+        </div>
     </main>
+      
+    <footer class="bg-white border-t border-slate-200 mt-auto py-8">
+    <div class="container-fluid px-4">
+        <div class="row gy-4 align-items-center">
+            <!-- Copyright & Credits -->
+            <div class="col-12 col-md-4 text-center text-md-end">
+                <p class="text-slate-400 text-xs mb-1">
+                    &copy; 2026 Smart Assess. All rights reserved.
+                </p>
+                <div class="flex items-center justify-center justify-md-end space-x-2 text-slate-400">
+                    <i class="bi bi-code-slash text-indigo-500"></i>
+                    <span class="text-xs"> Built with Django & AI </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+   
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
