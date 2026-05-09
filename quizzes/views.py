@@ -3,6 +3,7 @@ import os
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.urls import reverse
 # Consolidated Models (Remove duplicate Subcategory import)
 from .models import Category, Subcategory, Question, Choice, QuizAttempt
 # Only import generate_ai_questions (get_ai_explanation is now handled inside it)
@@ -23,26 +24,39 @@ def subcategory_list(request, category_id):
 
 def quiz_settings(request, subcategory_id):
     subcategory = get_object_or_404(Subcategory, id=subcategory_id)
-    timer_enabled = request.POST.get('timer') == 'on'
-    timer_duration = int(request.POST.get('timer_duration', 5)) if timer_enabled else 0
-     
+    
+    # 1. Capture the mode from the URL (?mode=ai) for the GET request
+    mode_from_url = request.GET.get('mode', 'standard')
 
     if request.method == 'POST':
+        # 2. Capture the mode from the hidden input for the POST request
+        quiz_mode = request.POST.get('quiz_mode', 'standard')
+        
         request.session['quiz_config'] = {
             'subcategory_id': subcategory_id,
             'difficulty': request.POST.get('difficulty'),
             'num_questions': int(request.POST.get('num_questions')),
             'timer_enabled': request.POST.get('timer') == 'on',
-            'time_limit': int(request.POST.get('timer_duration', 5)) * 60
+            'time_limit': int(request.POST.get('timer_duration', 5)) * 60,
         }
         
-        # Create the attempt and store its ID in the session
+        # Create the attempt to prevent the "Battlefield" redirect
         attempt = QuizAttempt.objects.create(user=request.user)
-        request.session['current_quiz_id'] = attempt.id  # <--- CRITICAL LINE
+        request.session['current_quiz_id'] = attempt.id
+        request.session.modified = True
+        request.session.save() 
+
+        if quiz_mode == 'ai':
+            return redirect('quiz_loading', sub_id=subcategory_id)
         
         return redirect('start_quiz_engine', quiz_id=attempt.id)
-    
-    return render(request, 'quizzes/quiz_settings.html', {'subcategory': subcategory})
+
+    # 3. CRITICAL: This return must be OUTSIDE the 'if POST' block 
+    # to handle the initial page load (GET request).
+    return render(request, 'quizzes/quiz_settings.html', {
+        'subcategory': subcategory,
+        'mode': mode_from_url
+    })
 
 def start_quiz_engine(request, quiz_id):
     attempt = get_object_or_404(QuizAttempt, id=quiz_id, user=request.user)
@@ -237,10 +251,11 @@ def process_ai_generation(request, sub_id):
         request.session['ai_quiz_data'] = questions
         request.session['current_sub_id'] = sub_id
         request.session.modified = True
+        request.session.save()
         # Send the redirect URL back to the frontend
         return JsonResponse({
             'status': 'success', 
-            'redirect_url': '/quizzes/play/ai/' # Ensure this matches your URLs.py path
+            'redirect_url': reverse('quiz_play_ai') 
         })
     
     return JsonResponse({'status': 'error', 'message': 'Failed to reach AI server'})

@@ -22,7 +22,7 @@
 
                 <form method="POST">
                     {% csrf_token %}
-                    
+                    <input type="hidden" name="quiz_mode" value="{{ request.GET.mode|default:'standard' }}">
                     <div class="mb-4">
                         <label class="form-label-bold d-block">Select Difficulty</label>
                         <div class="btn-group w-100" role="group">
@@ -60,7 +60,7 @@
                             <option value="30">30 Minutes</option>
                         </select>
                     </div>
-
+                    
                     <button type="submit" class="btn-dynamic w-100 py-3 shadow">
                         🚀 Start Quiz Now
                     </button>

@@ -53,7 +53,7 @@
         // a moment to finalize the DB write on the server.
         setTimeout(() => {
             window.location.href = "{% url 'quiz_play_ai' %}";
-        }, 1000);
+        },1500);
 
     } else {
         // Handle logic errors from the Groq API (e.g., Rate Limits)
