@@ -27,22 +27,47 @@
         }, 150);
 
         // 2. Call the actual backend generation
-        fetch("{% url 'process_ai_generation' subcategory.id %}")
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    width = 100;
-                    bar.style.width = "100%";
-                    status.innerText = "Quiz Ready!";
-                    // Redirect to the play page after a short "success" pause
-                    setTimeout(() => {
-                        window.location.href = "{% url 'quiz_play_ai' %}";
-                    }, 800);
-                } else {
-                    alert("AI Generation Error: " + data.message);
-                    window.location.href = "{% url 'dashboard' %}";
-                }
-            });
+            fetch("{% url 'process_ai_generation' subcategory.id %}", {
+    method: 'GET',
+    headers: {
+        'X-Requested-With': 'XMLHttpRequest', // Tells Django this is an AJAX call
+    }
+})
+.then(response => {
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+    return response.json();
+})
+.then(data => {
+    if (data.status === 'success') {
+        // 1. Visual confirmation of completion
+        width = 100;
+        bar.style.width = "100%";
+        bar.classList.remove('bg-primary'); // Optional: change color to success
+        bar.classList.add('bg-success');
+        status.innerText = "Questions Generated Successfully!";
+
+        // 2. Controlled Redirect
+        // The 1000ms delay gives the Django session backend 
+        // a moment to finalize the DB write on the server.
+        setTimeout(() => {
+            window.location.href = "{% url 'quiz_play_ai' %}";
+        }, 1000);
+
+    } else {
+        // Handle logic errors from the Groq API (e.g., Rate Limits)
+        status.innerText = "AI Generation Failed...";
+        alert("AI Error: " + (data.message || "Unknown error occurred"));
+        window.location.href = "{% url 'subcategories' subcategory.category.id %}";
+    }
+})
+.catch(error => {
+    console.error("Fetch Error:", error);
+    status.innerText = "Connection Error...";
+    alert("Could not connect to the server. Please check your internet.");
+    window.location.href = "{% url 'quiz_categories' %}";
+});
     });
 </script>
 {% endblock %}

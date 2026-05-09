@@ -23,6 +23,7 @@ class Question(models.Model):
     subcategory = models.ForeignKey(Subcategory, on_delete=models.CASCADE, related_name='questions')
     text = models.TextField()
     difficulty = models.CharField(max_length=10, choices=DIFFICULTY_CHOICES)
+    explanation = models.TextField(null=True, blank=True)
     
     def __str__(self): return self.text[:50]
 
