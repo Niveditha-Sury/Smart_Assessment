@@ -40,6 +40,9 @@
             outline: none !important; 
         }
         /* Ensures the collapse doesn't glitch with Tailwind's global styles */
+        .navbar-collapse.collapse {
+            visibility: visible !important;
+        }
         .collapse.show {
             visibility: visible !important;
             display: block !important;
@@ -78,15 +81,12 @@
                             <a href="{% url 'quiz_history' %}" class="nav-link text-slate-600 hover:text-indigo-600 px-lg-3">History</a>
                         </li>
 
-                        <!-- User Info & Logout (Mobile Friendly) -->
-                        <li class="nav-item border-t lg:border-t-0 border-slate-100 mt-2 lg:mt-0 pt-2 lg:pt-0">
-                            <div class="flex items-center space-x-4 lg:ml-4">
-                                <span class="text-slate-700 text-sm font-semibold hidden lg:block">Hi, {{ user.username }}</span>
-                                <form action="{% url 'logout' %}" method="post" class="m-0 p-0">
-                                    {% csrf_token %}
-                                    <button type="submit" class="nav-link text-slate-500 hover:text-red-600 text-sm font-semibold border-0 bg-transparent py-2">Logout</button>
-                                </form>
-                            </div>
+                        <!-- Logout -->
+                        <li class="nav-item lg:ml-4">
+                            <form action="{% url 'logout' %}" method="post" class="m-0 p-0">
+                                {% csrf_token %}
+                                <button type="submit" class="nav-link text-slate-600 hover:text-red-600 px-lg-3 border-0 bg-transparent py-2">Logout</button>
+                            </form>
                         </li>
                     {% else %}
                         <li class="nav-item">
