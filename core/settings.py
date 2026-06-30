@@ -31,16 +31,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-hxb6)m2zycejvjlbol_d(p8+)a*1@5z8_+osfxud%2yx1@_3pf'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['localhost', 
     '127.0.0.1', 
-    '.railway.app']
+    '.onrender.com']
 
 # Added actual Railway URL
 CSRF_TRUSTED_ORIGINS = [
-    'https://smartassessment-system.up.railway.app',
-    'https://*.railway.app' # Wildcard to cover any Railway subdomain
+    ' https://smart-assessment-5fxb.onrender.com',
+    'https://*.onrender.com' # Wildcard to cover any Railway subdomain
 ]
 
 
